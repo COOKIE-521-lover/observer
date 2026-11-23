@@ -14,7 +14,7 @@ export default {
                   width: 100%;
                   height: 100%;
                   overflow: hidden;
-                  background-color: #000; 
+                  /* 删除了 background-color: #000; 让图片不受遮挡 */
               }
               .bg-image {
                   position: fixed;
@@ -22,11 +22,11 @@ export default {
                   left: 0;
                   width: 100vw;
                   height: 100vh;
-                  /* ⚠️ 把下面这个链接换成你刚才复制的 raw 链接 */
-                 background-image: url('https://raw.githubusercontent.com/COOKIE-521-lover/observer/main/star.jpg');
+                  /* 修正后的 raw 链接 */
+                  background-image: url('https://raw.githubusercontent.com/COOKIE-521-lover/observer/main/star.jpg');
                   background-size: cover; 
                   background-position: center; 
-                  z-index: -1; 
+                  /* 删除了 z-index: -1，让它正常显示 */
               }
           </style>
       </head>
