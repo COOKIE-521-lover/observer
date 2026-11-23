@@ -1,33 +1,118 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的首页</title>
-    <style>
-        /* 让网页铺满全屏，没有白边和滚动条 */
-        body, html {
+export default {
+  async fetch(request, env, ctx) {
+    const html = `
+      <!DOCTYPE html>
+      <html lang="zh-CN">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nemu - 星空</title>
+        <style>
+          /* 清除边距，全屏显示，背景设为纯黑 */
+          body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
             background-color: #000;
-        }
-        /* 直接引用你的 DBIMG 视频链接 */
-        video {
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-        }
-    </style>
-</head>
-<body>
+          }
+          /* 画布铺满全屏 */
+          canvas {
+            display: block;
+          }
+        </style>
+      </head>
+      <body>
+        <canvas id="starfield"></canvas>
 
-    <!-- 这里直接引用你的视频链接 -->
-    <video autoplay loop muted playsinline>
-        <source src="https://cdn.dbimg.app/q0rVH4XV.mp4" type="video/mp4">
-    </video>
+        <script>
+          const canvas = document.getElementById('starfield');
+          const ctx = canvas.getContext('2d');
 
-</body>
-</html>
+          let width, height;
+          let stars = [];
+
+          // 调整画布大小
+          function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initStars();
+          }
+
+          // 初始化星星
+          function initStars() {
+            stars = [];
+            // 星星数量（电脑端多，手机端少，防卡顿）
+            const numStars = Math.floor((width * height) / 3000); 
+            
+            for (let i = 0; i < numStars; i++) {
+              stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                z: Math.random() * width, // 用于制造远近/移动速度差异
+                size: Math.random() * 1.5 + 0.5
+              });
+            }
+          }
+
+          // 绘制星空
+          function draw() {
+            // 拖尾效果：用半透明黑色覆盖上一次的绘制
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            // 循环绘制每一颗星星
+            for (let i = 0; i < stars.length; i++) {
+              let star = stars[i];
+              
+              // 星星颜色，带一点随机的偏蓝或偏白
+              ctx.fillStyle = 'white';
+
+              // 绘制星星（圆点）
+              ctx.beginPath();
+              ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+              ctx.fill();
+
+              // 移动星星（让星空动起来）
+              star.z -= 2; // 移动速度，数字越大越快
+              if (star.z <= 0) {
+                star.z = width;
+              }
+
+              // 根据 Z 轴计算在屏幕上的投影位置
+              let x = (star.x - width / 2) * (width / star.z) + width / 2;
+              let y = (star.y - height / 2) * (width / star.z) + height / 2;
+
+              // 如果星星移出屏幕，重新生成
+              if (x < 0 || x > width || y < 0 || y > height) {
+                star.x = Math.random() * width;
+                star.y = Math.random() * height;
+                star.z = width;
+              } else {
+                // 重新绘制移动后的星星（制造飞行感）
+                ctx.beginPath();
+                ctx.arc(x, y, star.size * (width / star.z) * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+
+            requestAnimationFrame(draw);
+          }
+
+          // 监听窗口大小变化
+          window.addEventListener('resize', resize);
+          
+          // 启动
+          resize();
+          draw();
+        </script>
+      </body>
+      </html>
+    `;
+
+    return new Response(html, {
+      headers: { "content-type": "text/html;charset=UTF-8" },
+    });
+  },
+};
