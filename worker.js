@@ -22,8 +22,8 @@ export default {
                   left: 0;
                   width: 100vw;
                   height: 100vh;
-                  /* 换成了极其稳定的 Unsplash 星空图 */
-                  background-image: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2048&auto=format&fit=crop');
+                  /* 引用你刚上传的 star.jpg */
+                  background-image: url('./star.jpg');
                   background-size: cover; 
                   background-position: center; 
                   z-index: -1; 
