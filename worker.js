@@ -8,7 +8,6 @@ export default {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Nemu</title>
           <style>
-              /* 清除所有默认边距，让背景铺满全屏 */
               body, html {
                   margin: 0;
                   padding: 0;
@@ -17,27 +16,20 @@ export default {
                   overflow: hidden;
                   background-color: #000; 
               }
-
-              /* 背景图片的样式 */
               .bg-image {
                   position: fixed;
                   top: 0;
                   left: 0;
                   width: 100vw;
                   height: 100vh;
-                  /* 你的图片链接 */
                   background-image: url('https://cdn.dbimg.app/HTrqSy6K.jpg');
-                  /* 让图片按比例铺满屏幕，多余部分裁剪，不变形 */
                   background-size: cover; 
-                  /* 图片居中显示 */
                   background-position: center; 
-                  /* 确保图片在底层 */
                   z-index: -1; 
               }
           </style>
       </head>
       <body>
-          <!-- 这是一个铺满全屏的图片层 -->
           <div class="bg-image"></div>
       </body>
       </html>
