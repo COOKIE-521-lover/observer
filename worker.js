@@ -23,7 +23,7 @@ export default {
                   width: 100vw;
                   height: 100vh;
                   /* ⚠️ 把下面这个链接换成你刚才复制的 raw 链接 */
-                  background-image: url('https://raw.githubusercontent.com/COOKIE-521-lover/observer/refs/heads/main/star.jpg');
+                 background-image: url('https://raw.githubusercontent.com/COOKIE-521-lover/observer/main/star.jpg');
                   background-size: cover; 
                   background-position: center; 
                   z-index: -1; 
