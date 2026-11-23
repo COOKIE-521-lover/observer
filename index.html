@@ -1,1 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的首页</title>
+    <style>
+        /* 让网页铺满全屏，没有白边和滚动条 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+        /* 直接引用你的 DBIMG 视频链接 */
+        video {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
 
+    <!-- 这里直接引用你的视频链接 -->
+    <video autoplay loop muted playsinline>
+        <source src="https://cdn.dbimg.app/q0rVH4XV.mp4" type="video/mp4">
+    </video>
+
+</body>
+</html>
