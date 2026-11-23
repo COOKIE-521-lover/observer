@@ -2,15 +2,40 @@ export default {
   async fetch(request, env, ctx) {
     const html = `
       <!DOCTYPE html>
-      <html>
-      <head><title>测试连接</title></head>
-      <body style="background: white; color: red; font-size: 50px; text-align: center; margin-top: 20vh;">
-        <h1>CONNECTED!</h1>
-        <p style="font-size: 20px;">如果你看到这行字，说明 Cloudflare 已经成功跑通了代码。</p>
-        <p style="font-size: 20px;">当前访问的域名是: ${request.headers.get("host")}</p>
+      <html lang="zh-CN">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Nemu</title>
+          <style>
+              body, html {
+                  margin: 0;
+                  padding: 0;
+                  width: 100%;
+                  height: 100%;
+                  overflow: hidden;
+                  background-color: #000; 
+              }
+              .bg-image {
+                  position: fixed;
+                  top: 0;
+                  left: 0;
+                  width: 100vw;
+                  height: 100vh;
+                  /* 换成了极其稳定的 Unsplash 星空图 */
+                  background-image: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2048&auto=format&fit=crop');
+                  background-size: cover; 
+                  background-position: center; 
+                  z-index: -1; 
+              }
+          </style>
+      </head>
+      <body>
+          <div class="bg-image"></div>
       </body>
       </html>
     `;
+
     return new Response(html, {
       headers: { "content-type": "text/html;charset=UTF-8" },
     });
