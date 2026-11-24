@@ -346,7 +346,7 @@ export default {
                   { name: "个人博客", url: "#", color: '#ff6600', size: 0.8, x: 5, y: -6, z: 7 },
                   { name: "联系我", url: "mailto:test@test.com", color: '#2ecc71', size: 0.6, x: -8, y: -4, z: -5 },
                   { name: "关于我", url: "#", color: '#9b59b6', size: 1.0, x: 0, y: 9, z: -7 },
-                  { name: "天津大学选课网", url: "https://classes.tju.edu.cn/", color: '#e91e63', size: 0.8, x: 10, y: -2, z: 8 },
+                  { name: "天津大学选课网", url: "", color: '#e91e63', size: 0.8, x: 10, y: -2, z: 8 },
                   { name: "待探索", url: "", color: '#03a9f4', size: 0.9, x: -3, y: 12, z: 4 },
                   { name: "待探索", url: "", color: '#ff9800', size: 0.7, x: 6, y: 8, z: -9 },
                   { name: "待探索", url: "", color: '#4caf50', size: 0.8, x: -12, y: -3, z: -4 },
