@@ -12,11 +12,6 @@ export default {
                   margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
                   background-color: #000; color: white; font-family: 'Segoe UI', sans-serif;
               }
-              #bg-image {
-                  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-                  background-image: url('https://raw.githubusercontent.com/COOKIE-521-lover/observer/main/star.jpg');
-                  background-size: cover; background-position: center; z-index: 0;
-              }
               canvas { display: block; position: relative; z-index: 1; }
               #tooltip {
                   position: absolute; background: rgba(0, 0, 0, 0.8);
@@ -37,7 +32,7 @@ export default {
           </script>
       </head>
       <body>
-          <div id="bg-image"></div>
+          
           <div id="tooltip">星球名字</div>
           
           <script type="module">
@@ -171,6 +166,123 @@ export default {
                   return new THREE.Mesh(geo, mat);
               }
 
+              // --- NASA-Punk 粒子条带星球（参考 jupiter.html 的点云实现） ---
+              function createBandedPlanet(baseHex, size, seed) {
+                  const group = new THREE.Group();
+
+                  // 命中球：透明，仅用于射线检测（悬停/点击）
+                  const hit = new THREE.Mesh(
+                      new THREE.SphereGeometry(size * 1.1, 16, 16),
+                      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+                  );
+                  group.add(hit);
+
+                  // 由主题色推导条带配色：亮带 / 基底 / 暗带 / 深暗带 / 极地
+                  const base = new THREE.Color(baseHex);
+                  const colZoneLight = base.clone().lerp(new THREE.Color('#ffffff'), 0.55);
+                  const colZoneDark  = base.clone();
+                  const colBeltBase  = base.clone().multiplyScalar(0.72);
+                  const colBeltDeep  = base.clone().multiplyScalar(0.4);
+                  const colPolar     = new THREE.Color('#787878');
+
+                  // 每个星球用 seed 产生一点不同的噪声偏移
+                  let h = 0;
+                  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+                  const ox = (h % 100) * 0.137;
+                  const oy = ((h >> 3) % 100) * 0.137;
+                  const oz = ((h >> 6) % 100) * 0.137;
+
+                  // Layer 1：表面对流层粒子
+                  const surfCount = 6000;
+                  const surfPos = [], surfCol = [];
+                  for (let i = 0; i < surfCount; i++) {
+                      const r = size * (0.99 + Math.random() * 0.02);
+                      const theta = Math.random() * Math.PI * 2;
+                      const phi = Math.acos(2 * Math.random() - 1);
+                      const x = r * Math.sin(phi) * Math.cos(theta);
+                      const y = r * Math.sin(phi) * Math.sin(theta);
+                      const z = r * Math.cos(phi);
+                      surfPos.push(x, y, z);
+
+                      const lat = y / size;
+                      const latNL = Math.sign(lat) * Math.pow(Math.abs(lat), 1.4);
+                      const noiseBase = noise3D(x * 1.5 + ox, y * 0.4 + oy, z * 1.5 + oz) * 2 - 1;
+                      const signal = Math.sin(latNL * 12.0 + noiseBase * 1.2);
+                      const dist = Math.abs(lat);
+                      const c = new THREE.Color();
+
+                      if (dist > 0.85) {
+                          c.copy(colZoneDark).lerp(colPolar, (dist - 0.85) * 4.0);
+                          c.multiplyScalar(0.9 + Math.random() * 0.2);
+                      } else if (signal > 0.1) {
+                          const brightness = (dist < 0.15) ? 1.0 : signal;
+                          c.copy(colZoneDark).lerp(colZoneLight, brightness * 0.8);
+                          if (noiseBase > 0.6) c.lerp(colBeltBase, 0.15);
+                      } else {
+                          const depth = Math.abs(signal);
+                          if (dist > 0.15 && dist < 0.45) {
+                              c.copy(colBeltBase).lerp(colBeltDeep, depth * 0.8 + 0.2);
+                          } else {
+                              c.copy(colBeltBase).lerp(colBeltDeep, depth * 0.5);
+                          }
+                      }
+
+                      const depthFactor = (r - size * 0.99) / (size * 0.02);
+                      c.multiplyScalar(0.8 + depthFactor * 0.4);
+                      surfCol.push(c.r, c.g, c.b);
+                  }
+                  const surfGeo = new THREE.BufferGeometry();
+                  surfGeo.setAttribute('position', new THREE.Float32BufferAttribute(surfPos, 3));
+                  surfGeo.setAttribute('color', new THREE.Float32BufferAttribute(surfCol, 3));
+                  group.add(new THREE.Points(surfGeo, new THREE.PointsMaterial({
+                      size: size * 0.08,
+                      vertexColors: true,
+                      transparent: true,
+                      opacity: 0.95,
+                      sizeAttenuation: true
+                  })));
+
+                  // Layer 2：平流层薄雾（加法混合）
+                  const hazeCount = 3000;
+                  const hazePos = [], hazeCol = [];
+                  const colHaze = new THREE.Color('#ffffff');
+                  const colGold = base.clone().lerp(new THREE.Color('#ffffff'), 0.4);
+                  for (let i = 0; i < hazeCount; i++) {
+                      const r = size * (1.02 + Math.random() * 0.04);
+                      const theta = Math.random() * Math.PI * 2;
+                      const phi = Math.acos(2 * Math.random() - 1);
+                      hazePos.push(
+                          r * Math.sin(phi) * Math.cos(theta),
+                          r * Math.sin(phi) * Math.sin(theta),
+                          r * Math.cos(phi)
+                      );
+                      const hc = new THREE.Color().copy(colHaze).lerp(colGold, 0.3);
+                      hazeCol.push(hc.r, hc.g, hc.b);
+                  }
+                  const hazeGeo = new THREE.BufferGeometry();
+                  hazeGeo.setAttribute('position', new THREE.Float32BufferAttribute(hazePos, 3));
+                  hazeGeo.setAttribute('color', new THREE.Float32BufferAttribute(hazeCol, 3));
+                  group.add(new THREE.Points(hazeGeo, new THREE.PointsMaterial({
+                      size: size * 0.12,
+                      vertexColors: true,
+                      transparent: true,
+                      opacity: 0.25,
+                      sizeAttenuation: true,
+                      blending: THREE.AdditiveBlending,
+                      depthWrite: false
+                  })));
+
+                  // Layer 3：极淡坐标线框
+                  const wireGeo = new THREE.WireframeGeometry(new THREE.SphereGeometry(size * 1.02, 20, 10));
+                  group.add(new THREE.LineSegments(wireGeo, new THREE.LineBasicMaterial({
+                      color: '#c29b61',
+                      transparent: true,
+                      opacity: 0.05
+                  })));
+
+                  return group;
+              }
+
               // --- 程序化生成土星纹理 ---
               function createSaturnTexture() {
                   const canvas = document.createElement('canvas');
@@ -241,23 +353,11 @@ export default {
               const mouse = new THREE.Vector2();
               const tooltip = document.getElementById('tooltip');
 
-              // 生成星球与发光环
+              // 生成星球（NASA-Punk 粒子条带风格，参考 jupiter.html）
               planetsData.forEach(data => {
-                  const geometry = new THREE.SphereGeometry(data.size, 64, 64);
-                  // 使用更高级的材质，有真实的反光和粗糙度
-                  const material = new THREE.MeshStandardMaterial({ 
-                      map: createTexture(data.color),
-                      roughness: 0.6,
-                      metalness: 0.2
-                  });
-                  const planet = new THREE.Mesh(geometry, material);
+                  const planet = createBandedPlanet(data.color, data.size, data.name);
                   planet.position.set(data.x, data.y, data.z);
-                  planet.userData = { name: data.name, url: data.url };
-                  
-                  // NASA-Punk 大气层（菲涅尔边缘辉光）
-                  const atmosphere = createAtmosphere(data.size, data.color);
-                  planet.add(atmosphere);
-
+                  planet.children[0].userData = { name: data.name, url: data.url };
                   scene.add(planet);
                   planets.push(planet);
               });
@@ -324,7 +424,7 @@ export default {
                   tooltip.style.top = event.clientY - 30 + 'px';
 
                   raycaster.setFromCamera(mouse, camera);
-                  const intersects = raycaster.intersectObjects(planets);
+                  const intersects = raycaster.intersectObjects(planets, true);
 
                   if (intersects.length > 0) {
                       tooltip.style.opacity = 1;
@@ -338,7 +438,7 @@ export default {
 
               window.addEventListener('click', () => {
                   raycaster.setFromCamera(mouse, camera);
-                  const intersects = raycaster.intersectObjects(planets);
+                  const intersects = raycaster.intersectObjects(planets, true);
                   if (intersects.length > 0) {
                       const url = intersects[0].object.userData.url;
                       if (url && url !== '#') window.open(url, '_blank');
