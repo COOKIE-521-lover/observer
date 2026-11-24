@@ -344,9 +344,18 @@ export default {
                   { name: "哔哩哔哩", url: "https://bilibili.com", color: '#00a1d6', size: 0.9, x: 7, y: 3, z: 4 },
                   { name: "GitHub", url: "https://github.com/COOKIE-521-lover", color: '#ffffff', size: 0.7, x: -6, y: 5, z: -2 },
                   { name: "个人博客", url: "#", color: '#ff6600', size: 0.8, x: 5, y: -6, z: 7 },
-                  { name: "联系我", url: "https://special-days-318537.framer.app/", color: '#2ecc71', size: 0.6, x: -8, y: -4, z: -5 },
-                  { name: "steam", url: "https://store.steampowered.com/", color: '#9b59b6', size: 1.0, x: 0, y: 9, z: -7 }
-                  { name: "天津大学选课网", url: "https://classes.tju.edu.cn/", color: '#8E27F5', size: 1.0, x:-3, y: 12, z: 4}
+                  { name: "联系我", url: "mailto:test@test.com", color: '#2ecc71', size: 0.6, x: -8, y: -4, z: -5 },
+                  { name: "关于我", url: "#", color: '#9b59b6', size: 1.0, x: 0, y: 9, z: -7 },
+                  { name: "待探索", url: "", color: '#e91e63', size: 0.8, x: 10, y: -2, z: 8 },
+                  { name: "待探索", url: "", color: '#03a9f4', size: 0.9, x: -3, y: 12, z: 4 },
+                  { name: "待探索", url: "", color: '#ff9800', size: 0.7, x: 6, y: 8, z: -9 },
+                  { name: "待探索", url: "", color: '#4caf50', size: 0.8, x: -12, y: -3, z: -4 },
+                  { name: "待探索", url: "", color: '#ffc107', size: 0.6, x: 4, y: -11, z: -5 },
+                  { name: "待探索", url: "", color: '#673ab7', size: 0.9, x: -9, y: 2, z: 10 },
+                  { name: "待探索", url: "", color: '#00bcd4', size: 0.7, x: 13, y: 4, z: -2 },
+                  { name: "待探索", url: "", color: '#f44336', size: 0.8, x: -5, y: -9, z: 8 },
+                  { name: "待探索", url: "", color: '#8bc34a', size: 0.6, x: 2, y: 6, z: 13 },
+                  { name: "待探索", url: "", color: '#ff5722', size: 0.9, x: -14, y: 6, z: -6 }
               ];
 
               const planets = [];
@@ -356,7 +365,7 @@ export default {
 
               // 生成星球（NASA-Punk 粒子条带风格，参考 jupiter.html）
               planetsData.forEach(data => {
-                  const planet = createBandedPlanet(data.color, data.size, data.name);
+                  const planet = createBandedPlanet(data.color, data.size, data.name + '|' + data.color);
                   planet.position.set(data.x, data.y, data.z);
                   planet.children[0].userData = { name: data.name, url: data.url };
                   scene.add(planet);
