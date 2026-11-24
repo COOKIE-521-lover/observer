@@ -346,6 +346,7 @@ export default {
                   { name: "个人博客", url: "#", color: '#ff6600', size: 0.8, x: 5, y: -6, z: 7 },
                   { name: "联系我", url: "https://special-days-318537.framer.app/", color: '#2ecc71', size: 0.6, x: -8, y: -4, z: -5 },
                   { name: "steam", url: "https://store.steampowered.com/", color: '#9b59b6', size: 1.0, x: 0, y: 9, z: -7 }
+                   { name: "天津大学选课网", url: "https://classes.tju.edu.cn/", color: '#B427F5', size: 1.5, x: 6, y: 9, z: -4 }
               ];
 
               const planets = [];
