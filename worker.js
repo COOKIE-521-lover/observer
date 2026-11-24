@@ -110,6 +110,51 @@ export default {
                   return new THREE.CanvasTexture(canvas);
               }
 
+              // --- 程序化生成土星纹理 ---
+              function createSaturnTexture() {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = 1024; canvas.height = 512;
+                  const ctx = canvas.getContext('2d');
+                  // 土星底色（米黄/浅金色）
+                  ctx.fillStyle = '#e3d1a9';
+                  ctx.fillRect(0, 0, 1024, 512);
+                  // 绘制水平条纹（土星的特征）
+                  for (let i = 0; i < 50; i++) {
+                      const y = Math.random() * 512;
+                      const height = Math.random() * 20 + 5;
+                      const opacity = Math.random() * 0.3;
+                      ctx.fillStyle = \`rgba(180, 150, 100, \${opacity})\`;
+                      ctx.fillRect(0, y, 1024, height);
+                  }
+                  // 随机添加一些暗色风暴斑点
+                  for (let i = 0; i < 200; i++) {
+                      ctx.fillStyle = \`rgba(100, 70, 40, \${Math.random() * 0.2})\`;
+                      ctx.beginPath();
+                      ctx.ellipse(Math.random() * 1024, Math.random() * 512, Math.random() * 30, Math.random() * 10, 0, 0, Math.PI * 2);
+                      ctx.fill();
+                  }
+                  return new THREE.CanvasTexture(canvas);
+              }
+
+              // --- 程序化生成土星环纹理（带透明通道） ---
+              function createRingTexture() {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = 1024; canvas.height = 128;
+                  const ctx = canvas.getContext('2d');
+                  // 基础透明
+                  ctx.clearRect(0, 0, 1024, 128);
+                  // 绘制多圈环带
+                  for (let i = 0; i < 1024; i++) {
+                      // 用正弦波模拟环的疏密
+                      let alpha = Math.abs(Math.sin(i * 0.05)) * 0.5 + 0.1;
+                      // 随机空隙
+                      if (Math.random() > 0.95) alpha = 0.02;
+                      ctx.fillStyle = \`rgba(220, 210, 190, \${alpha})\`;
+                      ctx.fillRect(i, 0, 1, 128);
+                  }
+                  return new THREE.CanvasTexture(canvas);
+              }
+
               // --- 中心的太阳 ---
               const sunGeometry = new THREE.SphereGeometry(2.5, 64, 64);
               const sunMaterial = new THREE.MeshStandardMaterial({ 
@@ -163,6 +208,54 @@ export default {
                   planets.push(planet);
               });
 
+              // --- 创建土星本体 ---
+              const saturnGeo = new THREE.SphereGeometry(3, 64, 64);
+              const saturnMat = new THREE.MeshStandardMaterial({
+                  map: createSaturnTexture(),
+                  roughness: 0.8,
+                  metalness: 0.1
+              });
+              const saturn = new THREE.Mesh(saturnGeo, saturnMat);
+              // 放在太阳与链接星球之间的空位，并稍微倾斜
+              saturn.position.set(-11, 1, 6);
+              saturn.rotation.z = 0.3;
+              saturn.rotation.x = 0.2;
+              scene.add(saturn);
+
+              // --- 创建土星环 ---
+              const ringGeo = new THREE.RingGeometry(4, 7, 128);
+              // 修正 UV：让环纹理沿半径方向展开，形成同心环带
+              const ringPos = ringGeo.attributes.position;
+              const ringUv = ringGeo.attributes.uv;
+              for (let i = 0; i < ringPos.count; i++) {
+                  const rx = ringPos.getX(i);
+                  const ry = ringPos.getY(i);
+                  const r = Math.sqrt(rx * rx + ry * ry);
+                  ringUv.setXY(i, (r - 4) / (7 - 4), 0.5);
+              }
+              ringUv.needsUpdate = true;
+              const ringMat = new THREE.MeshBasicMaterial({
+                  map: createRingTexture(),
+                  side: THREE.DoubleSide,
+                  transparent: true,
+                  opacity: 0.8,
+                  depthWrite: false // 防止环和星球相互遮挡渲染错误
+              });
+              const ring = new THREE.Mesh(ringGeo, ringMat);
+              // 环面默认在 XY 平面，绕 X 轴转 90° 使其平放在土星赤道面
+              ring.rotation.x = Math.PI / 2;
+              saturn.add(ring); // 把环绑在土星上，一起自转和倾斜
+
+              // --- 给土星补充一点科幻感灯光 ---
+              // 主光：暖色，从右上前方照亮土星
+              const dirLight = new THREE.DirectionalLight(0xfff5e6, 2);
+              dirLight.position.set(5, 3, 5);
+              scene.add(dirLight);
+              // 补光：冷色调，来自背面，体现宇宙的幽蓝
+              const backLight = new THREE.DirectionalLight(0x4a7dff, 1.5);
+              backLight.position.set(-5, -3, -5);
+              scene.add(backLight);
+
               // --- 交互事件 ---
               window.addEventListener('mousemove', (event) => {
                   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -206,6 +299,9 @@ export default {
                   
                   // 太阳自转
                   sun.rotation.y += 0.002;
+
+                  // 土星自转（土星环作为子对象会跟着一起转）
+                  saturn.rotation.y += 0.003;
                   
                   // 星球自转
                   planets.forEach((planet, index) => {
