@@ -83,31 +83,92 @@ export default {
               pointLight.position.set(0, 0, 0);
               scene.add(pointLight);
 
-              // --- 生成星球的纹理（用代码生成，防止加载失败） ---
+              // --- NASA-Punk 程序化纹理：3D 值噪声 + fBm（无缝、无外部贴图） ---
+              function smoothstep(t) { return t * t * (3 - 2 * t); }
+              function hash3(x, y, z) {
+                  const n = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453123;
+                  return n - Math.floor(n);
+              }
+              function noise3D(x, y, z) {
+                  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+                  const xf = x - xi, yf = y - yi, zf = z - zi;
+                  const u = smoothstep(xf), v = smoothstep(yf), w = smoothstep(zf);
+                  const c000 = hash3(xi, yi, zi),     c100 = hash3(xi + 1, yi, zi);
+                  const c010 = hash3(xi, yi + 1, zi), c110 = hash3(xi + 1, yi + 1, zi);
+                  const c001 = hash3(xi, yi, zi + 1), c101 = hash3(xi + 1, yi, zi + 1);
+                  const c011 = hash3(xi, yi + 1, zi + 1), c111 = hash3(xi + 1, yi + 1, zi + 1);
+                  const x00 = c000 + (c100 - c000) * u;
+                  const x10 = c010 + (c110 - c010) * u;
+                  const x01 = c001 + (c101 - c001) * u;
+                  const x11 = c011 + (c111 - c011) * u;
+                  const y0 = x00 + (x10 - x00) * v;
+                  const y1 = x01 + (x11 - x01) * v;
+                  return y0 + (y1 - y0) * w;
+              }
+              function fbm3(x, y, z, octaves = 5) {
+                  let value = 0, amp = 0.5, freq = 1, total = 0;
+                  for (let i = 0; i < octaves; i++) {
+                      value += amp * noise3D(x * freq, y * freq, z * freq);
+                      total += amp;
+                      amp *= 0.5; freq *= 2.0;
+                  }
+                  return value / total;
+              }
+              function hexToRgb(hex) {
+                  const m = hex.replace('#', '');
+                  const n = parseInt(m.length === 3 ? m.split('').map(c => c + c).join('') : m, 16);
+                  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+              }
+              // --- 在球面上采样 3D 噪声，生成无缝星球表面 ---
               function createTexture(baseColor, isSun = false) {
                   const canvas = document.createElement('canvas');
-                  canvas.width = 512; canvas.height = 512;
+                  const W = 512, H = 256;
+                  canvas.width = W; canvas.height = H;
                   const ctx = canvas.getContext('2d');
-                  // 填充基础色
-                  ctx.fillStyle = baseColor;
-                  ctx.fillRect(0, 0, 512, 512);
-                  
-                  // 加上噪点模拟星球表面
-                  for (let i = 0; i < 5000; i++) {
-                      ctx.fillStyle = \`rgba(0,0,0,\${Math.random() * 0.3})\`;
-                      ctx.beginPath();
-                      ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 5, 0, Math.PI * 2);
-                      ctx.fill();
-                  }
-                  if (isSun) {
-                      for (let i = 0; i < 3000; i++) {
-                          ctx.fillStyle = \`rgba(255,255,255,\${Math.random() * 0.5})\`;
-                          ctx.beginPath();
-                          ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 8, 0, Math.PI * 2);
-                          ctx.fill();
+                  const img = ctx.createImageData(W, H);
+                  const px = img.data;
+                  const base = hexToRgb(baseColor);
+                  const freq = 2.2;
+                  for (let y = 0; y < H; y++) {
+                      const phi = (y / (H - 1)) * Math.PI;
+                      const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi);
+                      for (let x = 0; x < W; x++) {
+                          const theta = (x / (W - 1)) * Math.PI * 2;
+                          const nx = sinPhi * Math.cos(theta);
+                          const ny = cosPhi;
+                          const nz = sinPhi * Math.sin(theta);
+                          let n = fbm3(nx * freq, ny * freq, nz * freq, 5);
+                          n = Math.max(0, Math.min(1, n));
+                          n = (n - 0.5) * 1.6 + 0.5; // 增强对比
+                          n = Math.max(0, Math.min(1, n));
+                          const t = isSun ? (0.55 + 0.65 * n) : (0.15 + 0.85 * n);
+                          const pole = 1.0 - 0.22 * Math.abs(Math.cos(phi)); // 两极略暗
+                          const i = (y * W + x) * 4;
+                          px[i]     = base.r * t * pole;
+                          px[i + 1] = base.g * t * pole;
+                          px[i + 2] = base.b * t * pole;
+                          px[i + 3] = 255;
                       }
                   }
-                  return new THREE.CanvasTexture(canvas);
+                  ctx.putImageData(img, 0, 0);
+                  const tex = new THREE.CanvasTexture(canvas);
+                  tex.colorSpace = THREE.SRGBColorSpace;
+                  return tex;
+              }
+              // --- 大气层：菲涅尔边缘辉光 ---
+              function createAtmosphere(size, colorHex) {
+                  const geo = new THREE.SphereGeometry(size * 1.18, 64, 64);
+                  const glow = new THREE.Color(colorHex).lerp(new THREE.Color(0xffffff), 0.3);
+                  const mat = new THREE.ShaderMaterial({
+                      vertexShader: 'varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+                      fragmentShader: 'varying vec3 vNormal; uniform vec3 uColor; void main() { float intensity = pow(0.72 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0); gl_FragColor = vec4(uColor, 1.0) * intensity; }',
+                      uniforms: { uColor: { value: glow } },
+                      blending: THREE.AdditiveBlending,
+                      side: THREE.BackSide,
+                      transparent: true,
+                      depthWrite: false
+                  });
+                  return new THREE.Mesh(geo, mat);
               }
 
               // --- 程序化生成土星纹理 ---
@@ -193,16 +254,9 @@ export default {
                   planet.position.set(data.x, data.y, data.z);
                   planet.userData = { name: data.name, url: data.url };
                   
-                  // 给星球加一圈极淡的外发光（用稍微大一点的透明球体模拟）
-                  const glowGeo = new THREE.SphereGeometry(data.size * 1.2, 32, 32);
-                  const glowMat = new THREE.MeshBasicMaterial({
-                      color: data.color,
-                      transparent: true,
-                      opacity: 0.15,
-                      side: THREE.BackSide // 只渲染内表面，形成光晕
-                  });
-                  const glow = new THREE.Mesh(glowGeo, glowMat);
-                  planet.add(glow); // 把光晕绑在星球上
+                  // NASA-Punk 大气层（菲涅尔边缘辉光）
+                  const atmosphere = createAtmosphere(data.size, data.color);
+                  planet.add(atmosphere);
 
                   scene.add(planet);
                   planets.push(planet);
@@ -221,6 +275,10 @@ export default {
               saturn.rotation.z = 0.3;
               saturn.rotation.x = 0.2;
               scene.add(saturn);
+
+              // 土星大气（淡金色菲涅尔辉光）
+              const saturnAtmosphere = createAtmosphere(3, '#e3d1a9');
+              saturn.add(saturnAtmosphere);
 
               // --- 创建土星环 ---
               const ringGeo = new THREE.RingGeometry(4, 7, 128);
