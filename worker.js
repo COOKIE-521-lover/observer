@@ -280,7 +280,7 @@ export default {
                       opacity: 0.05
                   })));
 
-                  return group;
+                  return { group, hit };
               }
 
               // --- 程序化生成土星纹理 ---
@@ -346,7 +346,7 @@ export default {
                   { name: "个人博客", url: "#", color: '#ff6600', size: 0.8, x: 5, y: -6, z: 7 },
                   { name: "联系我", url: "mailto:test@test.com", color: '#2ecc71', size: 0.6, x: -8, y: -4, z: -5 },
                   { name: "关于我", url: "#", color: '#9b59b6', size: 1.0, x: 0, y: 9, z: -7 },
-                  { name: "待探索", url: "", color: '#e91e63', size: 0.8, x: 10, y: -2, z: 8 },
+                  { name: "天津大学选课网", url: "https://classes.tju.edu.cn/", color: '#e91e63', size: 0.8, x: 10, y: -2, z: 8 },
                   { name: "待探索", url: "", color: '#03a9f4', size: 0.9, x: -3, y: 12, z: 4 },
                   { name: "待探索", url: "", color: '#ff9800', size: 0.7, x: 6, y: 8, z: -9 },
                   { name: "待探索", url: "", color: '#4caf50', size: 0.8, x: -12, y: -3, z: -4 },
@@ -358,18 +358,20 @@ export default {
                   { name: "待探索", url: "", color: '#ff5722', size: 0.9, x: -14, y: 6, z: -6 }
               ];
 
-              const planets = [];
+              const planets = [];      // 命中球（射线检测）
+              const planetGroups = []; // 星球组（动画）
               const raycaster = new THREE.Raycaster();
               const mouse = new THREE.Vector2();
               const tooltip = document.getElementById('tooltip');
 
               // 生成星球（NASA-Punk 粒子条带风格，参考 jupiter.html）
               planetsData.forEach(data => {
-                  const planet = createBandedPlanet(data.color, data.size, data.name + '|' + data.color);
-                  planet.position.set(data.x, data.y, data.z);
-                  planet.children[0].userData = { name: data.name, url: data.url };
-                  scene.add(planet);
-                  planets.push(planet);
+                  const { group, hit } = createBandedPlanet(data.color, data.size, data.name + '|' + data.color);
+                  group.position.set(data.x, data.y, data.z);
+                  hit.userData = { name: data.name, url: data.url };
+                  scene.add(group);
+                  planetGroups.push(group);
+                  planets.push(hit);
               });
 
               // --- 创建土星本体 ---
@@ -434,7 +436,7 @@ export default {
                   tooltip.style.top = event.clientY - 30 + 'px';
 
                   raycaster.setFromCamera(mouse, camera);
-                  const intersects = raycaster.intersectObjects(planets, true);
+                  const intersects = raycaster.intersectObjects(planets);
 
                   if (intersects.length > 0) {
                       tooltip.style.opacity = 1;
@@ -448,7 +450,7 @@ export default {
 
               window.addEventListener('click', () => {
                   raycaster.setFromCamera(mouse, camera);
-                  const intersects = raycaster.intersectObjects(planets, true);
+                  const intersects = raycaster.intersectObjects(planets);
                   if (intersects.length > 0) {
                       const url = intersects[0].object.userData.url;
                       if (url && url !== '#') window.open(url, '_blank');
@@ -472,7 +474,7 @@ export default {
                   saturn.rotation.y += 0.003;
                   
                   // 星球自转
-                  planets.forEach((planet, index) => {
+                  planetGroups.forEach((planet, index) => {
                       planet.rotation.y += 0.01;
                       // 让星球像呼吸一样缓慢上下浮动
                       planet.position.y += Math.sin(time * 2 + index) * 0.005;
