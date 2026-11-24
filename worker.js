@@ -344,8 +344,8 @@ export default {
                   { name: "哔哩哔哩", url: "https://bilibili.com", color: '#00a1d6', size: 0.9, x: 7, y: 3, z: 4 },
                   { name: "GitHub", url: "https://github.com/COOKIE-521-lover", color: '#ffffff', size: 0.7, x: -6, y: 5, z: -2 },
                   { name: "个人博客", url: "#", color: '#ff6600', size: 0.8, x: 5, y: -6, z: 7 },
-                  { name: "联系我", url: "mailto:test@test.com", color: '#2ecc71', size: 0.6, x: -8, y: -4, z: -5 },
-                  { name: "关于我", url: "#", color: '#9b59b6', size: 1.0, x: 0, y: 9, z: -7 }
+                  { name: "联系我", url: "https://special-days-318537.framer.app/", color: '#2ecc71', size: 0.6, x: -8, y: -4, z: -5 },
+                  { name: "steam", url: "https://store.steampowered.com/", color: '#9b59b6', size: 1.0, x: 0, y: 9, z: -7 }
               ];
 
               const planets = [];
